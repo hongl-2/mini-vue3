@@ -6,7 +6,7 @@ class ReactiveEffect {
   run() {
     // 将此响应式依赖映射至全局 后续加入到依赖列表中
     activeEffect = this
-    this._fn()
+    return this._fn()
   }
 }
 
@@ -58,4 +58,5 @@ export function effect(fn) {
   const _effect = new ReactiveEffect(fn)
   // 运行当前的run
   _effect.run()
+  return _effect.run.bind(_effect)
 }
