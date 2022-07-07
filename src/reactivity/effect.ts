@@ -1,8 +1,12 @@
 class ReactiveEffect {
-  _fn: any;
-  constructor(fn) {
+  private readonly _fn: any
+  public scheduler: any = null;
+
+  constructor(fn, scheduler) {
     this._fn = fn
+    this.scheduler = scheduler
   }
+
   run() {
     // 将此响应式依赖映射至全局 后续加入到依赖列表中
     activeEffect = this
@@ -36,7 +40,7 @@ export function track(target, key) {
     depsMap.set(key, dep)
   }
 
-  dep.add(activeEffect)
+  activeEffect && dep.add(activeEffect)
 }
 /**
  * 在target中的值发生变化时, 去更新依赖于此target中的key的dep更新
@@ -49,13 +53,17 @@ export function trigger(target, key) {
   const depsMap = targetMap.get(target)
   const dep = depsMap.get(key)
   for (const effect of dep) {
-    effect.run()
+    if (effect.scheduler) {
+      effect.scheduler()
+    } else {
+      effect.run()
+    }
   }
 }
 
 let activeEffect
-export function effect(fn) {
-  const _effect = new ReactiveEffect(fn)
+export function effect(fn, options: any = {}) {
+  const _effect = new ReactiveEffect(fn, options.scheduler)
   // 运行当前的run
   _effect.run()
   return _effect.run.bind(_effect)
