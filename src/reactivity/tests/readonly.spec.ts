@@ -1,4 +1,4 @@
-import { readonly } from '../reactive';
+import { isReadonly, readonly } from '../reactive'
 
 describe('readonly', () => {
   it('happy path', () => {
@@ -6,6 +6,8 @@ describe('readonly', () => {
     const wrapped = readonly(obj)
     expect(wrapped).not.toBe(obj)
     expect(wrapped.foo).toBe(1)
+    expect(isReadonly(wrapped)).toBe(true)
+    expect(isReadonly(obj)).toBe(false)
   })
 
   it('warn when readonly have been set', () => {
