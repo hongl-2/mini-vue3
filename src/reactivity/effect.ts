@@ -1,8 +1,11 @@
+import { extend } from '../shared';
+
 class ReactiveEffect {
   private readonly _fn: any
   public scheduler: any = null;
   deps: any[] = []
   active = true
+  onStop?: () => void
 
   constructor(fn, scheduler) {
     this._fn = fn
@@ -15,8 +18,11 @@ class ReactiveEffect {
     return this._fn()
   }
   stop() {
-    if (!this.active) {
+    if(this.active) {
       cleanupEffect(this)
+      if(this.onStop) {
+        this.onStop()
+      }
       this.active = false
     }
   }
@@ -79,6 +85,8 @@ export function trigger(target, key) {
 let activeEffect
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler)
+  // _effect.onStop = options.onStop
+  extend(_effect, options)
   // 运行当前的run
   _effect.run()
   const runner: any = _effect.run.bind(_effect)
