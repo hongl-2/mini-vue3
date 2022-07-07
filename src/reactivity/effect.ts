@@ -1,6 +1,8 @@
 class ReactiveEffect {
   private readonly _fn: any
   public scheduler: any = null;
+  deps: any[] = []
+  active = true
 
   constructor(fn, scheduler) {
     this._fn = fn
@@ -12,6 +14,18 @@ class ReactiveEffect {
     activeEffect = this
     return this._fn()
   }
+  stop() {
+    if (!this.active) {
+      cleanupEffect(this)
+      this.active = false
+    }
+  }
+}
+
+export function cleanupEffect(effect) {
+  effect.deps.forEach((dep: any) => {
+    dep.delete(effect)
+  })
 }
 
 const targetMap = new Map()
@@ -39,8 +53,9 @@ export function track(target, key) {
     // 收集所有关于这个键的依赖
     depsMap.set(key, dep)
   }
-
-  activeEffect && dep.add(activeEffect)
+  if(!activeEffect) return
+  dep.add(activeEffect)
+  activeEffect.deps.push(dep)
 }
 /**
  * 在target中的值发生变化时, 去更新依赖于此target中的key的dep更新
@@ -66,5 +81,12 @@ export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler)
   // 运行当前的run
   _effect.run()
-  return _effect.run.bind(_effect)
+  const runner: any = _effect.run.bind(_effect)
+  // 将当前effect实例挂载在runner方法上
+  runner.effect = _effect
+  return runner
+}
+
+export function stop(runner) {
+  runner.effect.stop()
 }
