@@ -1,5 +1,6 @@
 import { extend } from '../shared';
 
+let shouldTrack = false
 class ReactiveEffect {
   private readonly _fn: any
   public scheduler: any = null;
@@ -13,12 +14,23 @@ class ReactiveEffect {
   }
 
   run() {
+    if (!this.active) {
+      // 已经执行了stop 后续需要避免触发get时收集依赖 直接return 此时的shouldTrack 为false
+      return this._fn()
+    }
     // 将此响应式依赖映射至全局 后续加入到依赖列表中
     activeEffect = this
-    return this._fn()
+    // shouldTrack 表示后续的fn执行时会触发依赖收集
+    shouldTrack = true
+    // 🌰: effect(() => dummy = obj.foo)
+    // fn指的是内部函数: () => dummy = obj.foo
+    // 其中的 obj.foo 会触发get函数重新收集依赖
+    const result = this._fn()
+    shouldTrack = false
+    return result
   }
   stop() {
-    if(this.active) {
+    if (this.active) {
       cleanupEffect(this)
       if(this.onStop) {
         this.onStop()
@@ -32,11 +44,12 @@ export function cleanupEffect(effect) {
   effect.deps.forEach((dep: any) => {
     dep.delete(effect)
   })
+  effect.deps.length = 0
 }
 
 const targetMap = new Map()
 /**
- * 在获取target中的值时, 收集依赖于此对象数据的值并保存至targetMap中的depsMap中
+ * 在getter中触发 在获取target中的值时, 收集依赖于此对象数据的值并保存至targetMap中的depsMap中
  * 🌰: effect(() => newData => original.age + 1)
  * 获取original.age的值时 将 () => newData => original.age + 1 存储在targetMap中的depsMap中 以待后续变更值的执行
  * @param target
@@ -60,11 +73,12 @@ export function track(target, key) {
     depsMap.set(key, dep)
   }
   if(!activeEffect) return
+  if(!shouldTrack) return
   dep.add(activeEffect)
   activeEffect.deps.push(dep)
 }
 /**
- * 在target中的值发生变化时, 去更新依赖于此target中的key的dep更新
+ * 在setter中触发 在target中的值发生变化时, 去更新依赖于此target中的key的dep更新
  * 🌰: effect(() => newData => original.age + 1)
  * original.age更新时 去执行() => newData => original.age + 1动态更新 newData
  * @param target
