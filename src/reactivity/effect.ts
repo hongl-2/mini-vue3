@@ -1,6 +1,8 @@
-import { extend } from '../shared';
+import { extend } from '../shared'
 
+let activeEffect
 let shouldTrack = false
+
 class ReactiveEffect {
   private readonly _fn: any
   public scheduler: any = null;
@@ -56,6 +58,7 @@ const targetMap = new Map()
  * @param key
  */
 export function track(target, key) {
+  if(!isTracking()) return
   // target -> keys -> deps
   // 收集所有关于这个对象(target)的依赖
   let depsMap = targetMap.get(target)
@@ -72,8 +75,8 @@ export function track(target, key) {
     // 收集所有关于这个键的依赖
     depsMap.set(key, dep)
   }
-  if(!activeEffect) return
-  if(!shouldTrack) return
+
+  if(dep.has(activeEffect)) return
   dep.add(activeEffect)
   activeEffect.deps.push(dep)
 }
@@ -96,7 +99,6 @@ export function trigger(target, key) {
   }
 }
 
-let activeEffect
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler)
   // _effect.onStop = options.onStop
@@ -107,6 +109,10 @@ export function effect(fn, options: any = {}) {
   // 将当前effect实例挂载在runner方法上
   runner.effect = _effect
   return runner
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined
 }
 
 export function stop(runner) {
