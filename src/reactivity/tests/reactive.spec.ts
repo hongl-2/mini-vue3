@@ -1,4 +1,4 @@
-import { reactive, isReactive } from '../reactive'
+import { reactive, isReactive, isProxy } from '../reactive'
 
 describe('reactive', () => {
   it('happy path', () => {
@@ -7,6 +7,8 @@ describe('reactive', () => {
     expect(observed).not.toBe(original)
     expect(observed.foo).toBe(1)
     expect(isReactive(observed)).toBe(true)
+    expect(isReactive(original)).toBe(false)
+    expect(isProxy(observed)).toBe(true)
   })
 
   // 嵌套的reactive
