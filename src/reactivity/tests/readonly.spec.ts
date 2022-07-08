@@ -8,6 +8,8 @@ describe('readonly', () => {
     expect(wrapped.foo).toBe(1)
     expect(isReadonly(wrapped)).toBe(true)
     expect(isReadonly(obj)).toBe(false)
+    // add nested readonly test
+    expect(isReadonly(wrapped.bar)).toBe(true)
   })
 
   it('warn when readonly have been set', () => {

@@ -14,10 +14,12 @@ export function readonly(raw) {
 }
 
 export function isReactive(value) {
+  if(!value) return false
   return !!value[ReactiveFlags.IS_REACTIVE]
 }
 
 export function isReadonly(value) {
+  if(!value) return false
   return !!value[ReactiveFlags.IS_READONLY]
 }
 

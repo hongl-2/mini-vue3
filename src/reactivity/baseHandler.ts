@@ -1,6 +1,6 @@
 import { track, trigger } from './effect'
-import { warn } from '../shared'
-import { ReactiveFlags } from './reactive'
+import { isObject, warn } from '../shared'
+import { reactive, ReactiveFlags, readonly } from './reactive'
 
 const get = createGetter()
 const set = createSetter()
@@ -14,6 +14,10 @@ function createGetter(isReadonly = false) {
       return !isReadonly
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly
+    }
+
+    if(isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res)
     }
 
     if(!isReadonly) {
@@ -40,7 +44,7 @@ export const mutableHandle = {
 
 export const readonlyHandle = {
   get: readonlyGet,
-  set (target, key, value) {
+  set (target, key) {
     warn(`${key as string} is readonly, cannot been set, target:${target}`)
     return true
   }
