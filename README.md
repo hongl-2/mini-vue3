@@ -7,15 +7,15 @@
 ### reactivity
 
 - [x] reactive 的实现
-- [ ] track 依赖收集
-- [ ] trigger 触发依赖
-- [ ] 支持 effect.scheduler
-- [ ] 支持 effect.stop
-- [ ] readonly 的实现
-- [ ] 支持 isReactive
-- [ ] 支持 isReadonly
-- [ ] 支持嵌套 reactive
-- [ ] 支持嵌套 readonly
+- [x] track 依赖收集
+- [x] trigger 触发依赖
+- [x] 支持 effect.scheduler
+- [x] 支持 effect.stop
+- [x] readonly 的实现
+- [x] 支持 isReactive
+- [x] 支持 isReadonly
+- [x] 支持嵌套 reactive
+- [x] 支持嵌套 readonly
 - [ ] 支持 shallowReadonly
 - [ ] 支持 isProxy
 - [ ] ref 的实现
