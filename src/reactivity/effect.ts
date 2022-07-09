@@ -75,7 +75,10 @@ export function track(target, key) {
     // 收集所有关于这个键的依赖
     depsMap.set(key, dep)
   }
+  trackEffects(dep)
+}
 
+export function trackEffects(dep) {
   if(dep.has(activeEffect)) return
   dep.add(activeEffect)
   activeEffect.deps.push(dep)
@@ -90,6 +93,10 @@ export function track(target, key) {
 export function trigger(target, key) {
   const depsMap = targetMap.get(target)
   const dep = depsMap.get(key)
+  triggerEffects(dep)
+}
+
+export function triggerEffects(dep) {
   for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler()
@@ -111,7 +118,7 @@ export function effect(fn, options: any = {}) {
   return runner
 }
 
-function isTracking() {
+export function isTracking() {
   return shouldTrack && activeEffect !== undefined
 }
 

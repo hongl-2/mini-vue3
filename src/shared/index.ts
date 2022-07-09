@@ -7,3 +7,7 @@ export function warn(text: string) {
 export function isObject(object) {
   return object !== null && typeof object === 'object'
 }
+
+export function hasChanged(val, newValue) {
+  return !Object.is(val, newValue)
+}
