@@ -3,7 +3,7 @@ import { extend } from '../shared'
 let activeEffect
 let shouldTrack = false
 
-class ReactiveEffect {
+export class ReactiveEffect {
   private readonly _fn: any
   public scheduler: any = null;
   deps: any[] = []
@@ -92,6 +92,7 @@ export function trackEffects(dep) {
  */
 export function trigger(target, key) {
   const depsMap = targetMap.get(target)
+  if(!depsMap) return
   const dep = depsMap.get(key)
   triggerEffects(dep)
 }
