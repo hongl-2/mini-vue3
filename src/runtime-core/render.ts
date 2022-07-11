@@ -7,10 +7,12 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   // 判断是组件类型还是 element 类型
-
-  // 去处理组价
-  processComponent(vnode, container)
-
+  if(typeof vnode.type === 'string') {
+    // processElement(vnode, container)
+  } else {
+    // 去处理组价
+    processComponent(vnode, container)
+  }
 }
 
 function processComponent(vnode, container) {
