@@ -17,20 +17,6 @@ function patch(vnode, container) {
   }
 }
 
-function processComponent(vnode, container) {
-  mountComponent(vnode, container)
-}
-
-// 挂载组件流程
-function mountComponent(vnode, container) {
-  // 返回一个组件实例
-  const instance = createComponentInstance(vnode)
-  // 处理组件的setup逻辑
-  setupComponent(instance) // 执行完以后会初始化instance setup 并且再instance上添加render方法
-  // 将组件的render和组件的setup进行关联
-  setupRenderEffect(instance, container)
-}
-
 // 处理元素分支
 function processElement(vnode, container) {
   mountElement(vnode, container)
@@ -38,7 +24,7 @@ function processElement(vnode, container) {
 
 function mountElement(vnode, container) {
   // 创建当前分支节点
-  const el = document.createElement(vnode.type)
+  const el = vnode.el = document.createElement(vnode.type)
   const { children } = vnode
   if (typeof children === 'string') {
     el.textContent = children
@@ -55,10 +41,25 @@ function mountChildren(vnode, container) {
     patch(v, container)
   })
 }
+
+function processComponent(vnode, container) {
+  mountComponent(vnode, container)
+}
+
+// 挂载组件流程
+function mountComponent(initialVnode, container) {
+  // 返回一个组件实例
+  const instance = createComponentInstance(initialVnode)
+  // 处理组件的setup逻辑
+  setupComponent(instance) // 执行完以后会初始化instance setup 并且再instance上添加render方法
+  // 将组件的render和组件的setup进行关联
+  setupRenderEffect(instance, initialVnode, container)
+}
+
 // 将setup的值和render函数关联起来
-function setupRenderEffect(instance, container) {
+function setupRenderEffect(instance, initialVnode, container) {
   const { proxy } = instance
   const subTree = instance.render.call(proxy)
-
   patch(subTree, container)
+  initialVnode.el = subTree.el
 }
