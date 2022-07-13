@@ -1,4 +1,6 @@
 import { publicInstanceProxyHandlers } from './componentPublicInstance'
+import { initProps } from './componentProps'
+import { shallowReadonly } from '../reactivity'
 
 export function createComponentInstance(vnode) {
   const component = {
@@ -12,7 +14,7 @@ export function createComponentInstance(vnode) {
 // 处理组件
 export function setupComponent(instance) {
   // todo
-  // initProps()
+  initProps(instance, instance.vnode.props)
   // initSlots()
 
   // 初始化组件的setup 并将setup的结果(状态 state)保存起来
@@ -20,7 +22,7 @@ export function setupComponent(instance) {
 }
 // 初始化组件的setup 并将setup的结果(状态 state)保存起来
 function setupStateFulComponent(instance) {
-  // 组件的对象
+  // Component 为组件的对象
   const Component = instance.vnode.type
   // 设置组件实例的代理对象, 之后通过此属性获取 setup 返回的状态
   instance.proxy = new Proxy({_: instance}, publicInstanceProxyHandlers)
@@ -29,7 +31,7 @@ function setupStateFulComponent(instance) {
   if(setup) {
 
     // 执行setup函数 得到返回的结果 结果可能是 function or object
-    const setupResult = setup()
+    const setupResult = setup(shallowReadonly(instance.props))
     // 处理setup返回的结果
     handleSetupResult(instance, setupResult)
   }
