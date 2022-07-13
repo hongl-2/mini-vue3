@@ -27,9 +27,25 @@ function processElement(vnode, container) {
 function mountElement(vnode, container) {
   // 创建当前分支节点
   const el = vnode.el = document.createElement(vnode.type)
-  const { children, shapeFlag } = vnode
+  const { children, shapeFlag, props } = vnode
+  // 设置元素的属性
+  for(const key in props) {
+    const value = props[key]
+    // 判断on开头并且紧接着的字符为大写的字母就是事件名称
+    const isOn = (key) => /^on[A-Z]/.test(key)
+    if (isOn(key)) {
+      // 获取事件名称 onClick => click
+      const eventName = key.slice(2).toLowerCase()
+      // 为元素添加事件监听
+      el.addEventListener(eventName, value)
+    } else {
+      el.setAttribute(key, value)
+    }
+  }
+  // 通过位运算的 & 查询children 是否是 TEXT_CHILDREN 类型
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
+    // 通过位运算的 & 查询children 是否是 ARRAY_CHILDREN 类型
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(vnode, el)
   }
