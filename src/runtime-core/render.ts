@@ -1,5 +1,5 @@
 import { createComponentInstance, setupComponent } from './component'
-import { isObject } from '../shared'
+import { ShapeFlags } from '../shared/ShapeFlags'
 
 export function render(vnode, container) {
   // patch
@@ -7,11 +7,13 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
+
+  const { shapeFlag } = vnode
   // 判断是组件类型还是 element 类型
-  if(typeof vnode.type === 'string') {
+  if(shapeFlag & ShapeFlags.ELEMENT) {
     // element 类型直接走处理元素的逻辑
     processElement(vnode, container)
-  } else if(isObject(vnode.type)) {
+  } else if(shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     // component 类型走处理组件逻辑
     processComponent(vnode, container)
   }
@@ -25,10 +27,10 @@ function processElement(vnode, container) {
 function mountElement(vnode, container) {
   // 创建当前分支节点
   const el = vnode.el = document.createElement(vnode.type)
-  const { children } = vnode
-  if (typeof children === 'string') {
+  const { children, shapeFlag } = vnode
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(vnode, el)
   }
   // 将当前分支节点挂载在父级节点上
