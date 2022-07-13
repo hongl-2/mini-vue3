@@ -1,21 +1,28 @@
 import { publicInstanceProxyHandlers } from './componentPublicInstance'
 import { initProps } from './componentProps'
 import { shallowReadonly } from '../reactivity'
+import { emit } from './componentEmit'
+import { initSlots } from './componentSlots'
 
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
     type: vnode.type,
-    setupState: {}
+    setupState: {},
+    emit: () => {},
+    slots: {}
   }
+
+  component.emit = emit.bind(null, component) as any
 
   return component
 }
 // 处理组件
 export function setupComponent(instance) {
-  // todo
+  // 初始化props
   initProps(instance, instance.vnode.props)
-  // initSlots()
+  // 初始化slots
+  initSlots(instance, instance.vnode.children)
 
   // 初始化组件的setup 并将setup的结果(状态 state)保存起来
   setupStateFulComponent(instance)
@@ -31,7 +38,10 @@ function setupStateFulComponent(instance) {
   if(setup) {
 
     // 执行setup函数 得到返回的结果 结果可能是 function or object
-    const setupResult = setup(shallowReadonly(instance.props))
+    // props是一个shallowReadonly类型数据
+    const setupResult = setup(shallowReadonly(instance.props), {
+      emit: instance.emit
+    })
     // 处理setup返回的结果
     handleSetupResult(instance, setupResult)
   }

@@ -7,7 +7,6 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-
   const { shapeFlag } = vnode
   // 判断是组件类型还是 element 类型
   if(shapeFlag & ShapeFlags.ELEMENT) {

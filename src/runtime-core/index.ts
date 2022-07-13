@@ -1,5 +1,3 @@
-export * from './component'
-export * from './createApp'
-export * from './h'
-export * from './render'
-export * from './vnode'
+export { createApp } from './createApp'
+export { h } from './h'
+export { renderSlots } from './helpers/renderSlots'

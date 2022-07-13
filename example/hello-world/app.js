@@ -1,5 +1,4 @@
 import { h } from '../../lib/mini-vue.esm.js'
-import { Foo } from './foo.js'
 
 export const App = {
   render() {
@@ -16,10 +15,7 @@ export const App = {
           console.log('Mousedown')
         }
       },
-      [
-        h('div', {}, 'hello ' + this.msg),
-        h(Foo, { count: 1 })
-      ])
+      'hello ' + this.msg)
   },
   setup() {
     return {
