@@ -40,7 +40,6 @@ export const Custom = {
   setup() {
     const foo = inject('foo')
     const bar = inject('bar')
-    const abc = inject('abc')
     return {
       foo,
       bar
@@ -56,7 +55,6 @@ export const Custom = {
 export default {
   name: 'App',
   setup() {
-    provide('abc', 'from app')
   },
   render() {
     return h('div', {}, [h('p', {}, 'apiInject'), h(Provide)]);
