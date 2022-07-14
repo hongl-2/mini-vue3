@@ -40,14 +40,25 @@ export const Custom = {
   setup() {
     const foo = inject('foo')
     const bar = inject('bar')
+    const appData = inject('appData')
+    const defaultInject = inject('test', 'defaultInject')
+    const defaultWithFunc = inject('test', () => 'defaultFunc')
     return {
       foo,
-      bar
+      bar,
+      appData,
+      defaultInject,
+      defaultWithFunc
     }
   },
   render() {
     return (
-      h('div', {}, `这是provide提供的foo: ${this.foo}`)
+      h('div', {}, [
+        h('div', {}, `这是provide提供的foo: ${this.foo}`),
+        h('div', {}, `这是App提供的appData: ${this.appData}`),
+        h('div', {}, `携带默认值的inject: ${this.defaultInject}`),
+        h('div', {}, `携带默认值为函数的inject: ${this.defaultWithFunc}`)
+      ])
     )
   }
 }
@@ -55,6 +66,7 @@ export const Custom = {
 export default {
   name: 'App',
   setup() {
+    provide('appData', 'from app')
   },
   render() {
     return h('div', {}, [h('p', {}, 'apiInject'), h(Provide)]);
