@@ -36,12 +36,15 @@ function setupStateFulComponent(instance) {
 
   const { setup } = Component
   if(setup) {
-
+    // 在setup执行之前先设置当前的实例
+    setCurrentInstance(instance)
     // 执行setup函数 得到返回的结果 结果可能是 function or object
     // props是一个shallowReadonly类型数据
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit
     })
+    // setup执行结束后将当前实例置空
+    setCurrentInstance(null)
     // 处理setup返回的结果
     handleSetupResult(instance, setupResult)
   }
@@ -63,4 +66,14 @@ function handleSetupResult(instance, setupResult) {
 function finishComponentSetup(instance) {
   const Component = instance.type
   instance.render = Component.render
+}
+
+let currentInstance = null
+
+export function getCurrentInstance () {
+  return currentInstance
+}
+
+export function setCurrentInstance(instance) {
+  currentInstance = instance
 }
