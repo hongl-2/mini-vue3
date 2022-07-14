@@ -1,4 +1,4 @@
-import { createVNode } from '../vnode'
+import { createVNode, Fragment } from '../vnode'
 // 渲染slot的辅助函数
 export function renderSlots(slots, slotName, props) {
   // 获取到slot slot是一个函数
@@ -7,7 +7,7 @@ export function renderSlots(slots, slotName, props) {
   const slot = slots[slotName]
   if (slot) {
     if(typeof slot === 'function') {
-      return createVNode('div', {}, slot(props))
+      return createVNode(Fragment, {}, slot(props))
     }
   }
 }

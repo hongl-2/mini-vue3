@@ -1,5 +1,6 @@
 import { createComponentInstance, setupComponent } from './component'
 import { ShapeFlags } from '../shared/ShapeFlags'
+import { Text, Fragment } from './vnode'
 
 export function render(vnode, container) {
   // patch
@@ -7,15 +8,38 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-  const { shapeFlag } = vnode
-  // 判断是组件类型还是 element 类型
-  if(shapeFlag & ShapeFlags.ELEMENT) {
-    // element 类型直接走处理元素的逻辑
-    processElement(vnode, container)
-  } else if(shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    // component 类型走处理组件逻辑
-    processComponent(vnode, container)
+  const { shapeFlag, type } = vnode
+
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container)
+      break
+    case Text:
+      processText(vnode, container)
+      break
+    default:
+      // 判断是组件类型还是 element 类型
+      if(shapeFlag & ShapeFlags.ELEMENT) {
+        // element 类型直接走处理元素的逻辑
+        processElement(vnode, container)
+      } else if(shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        // component 类型走处理组件逻辑
+        processComponent(vnode, container)
+      }
+      break
   }
+}
+
+// 处理slot中的children (fragment)
+function processFragment(vnode, container) {
+  mountChildren(vnode, container)
+}
+
+// 处理文本节点
+function processText(vnode, container) {
+  const { children } = vnode
+  const textNode = vnode.el = document.createTextNode(children)
+  container.append(textNode)
 }
 
 // 处理元素分支
