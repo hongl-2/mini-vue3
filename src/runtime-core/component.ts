@@ -1,6 +1,6 @@
 import { publicInstanceProxyHandlers } from './componentPublicInstance'
 import { initProps } from './componentProps'
-import { shallowReadonly } from '../reactivity'
+import { proxyRefs, shallowReadonly } from '../reactivity'
 import { emit } from './componentEmit'
 import { initSlots } from './componentSlots'
 
@@ -42,9 +42,11 @@ function setupStateFulComponent(instance) {
     setCurrentInstance(instance)
     // 执行setup函数 得到返回的结果 结果可能是 function or object
     // props是一个shallowReadonly类型数据
-    const setupResult = setup(shallowReadonly(instance.props), {
-      emit: instance.emit
-    })
+    const setupResult = proxyRefs(
+      setup(shallowReadonly(instance.props), {
+        emit: instance.emit
+      })
+    )
     // setup执行结束后将当前实例置空
     setCurrentInstance(null)
     // 处理setup返回的结果
