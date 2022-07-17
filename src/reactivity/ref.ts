@@ -36,13 +36,6 @@ export function trackRefValue(ref) {
   }
 }
 
-export function triggerRefValue(ref, newValue) {
-  if(hasChanged(ref._value, newValue)) {
-    ref._value = newValue
-    triggerEffects(ref.dep)
-  }
-}
-
 export function ref(value) {
   return new RefImpl(value)
 }
