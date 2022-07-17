@@ -1,2 +1,3 @@
 // vue 出口文件
-export * from './runtime-core/index'
+export * from './runtime-dom'
+

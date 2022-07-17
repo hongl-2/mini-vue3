@@ -29,3 +29,5 @@ export function capitalize(str: string) {
 export const isArray = Array.isArray
 export const isFunc = (fn) => typeof fn === 'function'
 
+export const isOn = (key) => /^on[A-Z]/.test(key)
+
