@@ -10,7 +10,9 @@ export function createRenderer (options) {
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
-    insert: hostInsert
+    insert: hostInsert,
+    setElementText: hostSetElementText,
+    remove: hostRemove
   } = options
 
   function render(vnode, container) {
@@ -44,7 +46,7 @@ export function createRenderer (options) {
 
   // 处理slot中的children (fragment)
   function processFragment(n1, n2, container, parentComponent) {
-    mountChildren(n2, container, parentComponent)
+    mountChildren(n2.children, container, parentComponent)
   }
 
   // 处理文本节点
@@ -56,10 +58,11 @@ export function createRenderer (options) {
 
   // 处理元素分支
   function processElement(n1, n2, container, parentComponent) {
+    // 如果没有老的vnode 可以直接进行元素挂载
     if(!n1) {
       mountElement(n2, container, parentComponent)
     } else {
-      patchElement(n1, n2, container)
+      patchElement(n1, n2, container, parentComponent)
     }
   }
 
@@ -74,7 +77,8 @@ export function createRenderer (options) {
       el.textContent = children
       // 通过位运算的 & 查询children 是否是 ARRAY_CHILDREN 类型
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode, el, parentComponent)
+      // todo 这一块是改变 container的时机
+      mountChildren(vnode.children, el, parentComponent)
     }
 
     // 设置元素的属性
@@ -82,12 +86,12 @@ export function createRenderer (options) {
       const value = props[key]
       hostPatchProp(el, key, null, value)
     }
-
+    // 真正将元素挂载到dom树上的操作, 也是最终的操作
     // 将当前分支节点挂载在父级节点上
     hostInsert(el, container)
   }
 
-  function patchElement(n1, n2, container) {
+  function patchElement(n1, n2, container, parentComponent) {
     console.log('patchElement')
     console.log('n1', n1)
     console.log('n2', n2)
@@ -95,7 +99,69 @@ export function createRenderer (options) {
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
     const el = n2.el = n1.el
+
+    patchChildren(el, n1, n2, container, parentComponent)
     patchProps(el, oldProps, newProps)
+  }
+
+  /**
+   * 对比新旧虚拟node的children
+   * @param el 当前节点的el
+   * @param n1 老的vnode
+   * @param n2 新的vnode
+   * @param container 当前节点el的父级
+   * @param parentComponent 父级组件
+   */
+  function patchChildren(el, n1, n2, container, parentComponent) {
+    console.log('patchChildren el', el)
+    console.log('patchChildren container', container)
+    console.log('patchChildren parentComponent', parentComponent)
+    const prevShapeFlag = n1.shapeFlag
+    const nextShapeFlag = n2.shapeFlag
+
+    const c1 = n1.children
+    const c2 = n2.children
+    // 1. 老的是 text 新的是 text
+    // 2. 老的是 text 新的是 array
+    // 3. 老的是 array 新的是 text
+    // 4. 老的是 array 新的是 array
+    if(nextShapeFlag & ShapeFlags.TEXT_CHILDREN) { // 新的是text
+      if(prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {  // 新的是text 老的是array
+        unmountChildren(c1)
+      }
+      if(prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {  // 新的是text 老的是text
+        hostSetElementText(el, c2)
+      }
+    } else { // 新的array
+      if(prevShapeFlag & ShapeFlags.TEXT_CHILDREN) { // 新的是array 老的是text
+        hostSetElementText(el, '')
+        mountChildren(c2, container, parentComponent)
+      } else {  // 新的是array 老的是text
+        c1.forEach(item1 => {
+          c2.forEach(item2 => {
+            patchChildren(item1.el, item1, item2, n2.el, parentComponent)
+          })
+        })
+      }
+    }
+    // if(prevShapeFlag & ShapeFlags.TEXT_CHILDREN) { // 1. 老的是 text 新的是 text
+    //   if(nextShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    //     hostSetElementText(el, c2)
+    //   } else if (nextShapeFlag & ShapeFlags.ARRAY_CHILDREN) { // 2. 老的是 text 新的是 array
+    //     unmountChildren(c1, container, parentComponent)
+    //     hostSetElementText(el, c2)
+    //
+    //   }
+    // }
+  }
+
+  // 删除所有的子节点
+  function unmountChildren(children) {
+    for (let i = 0; i < children.length; i++) {
+      // el 为当前节点
+      const el = children[i].el
+      hostRemove(el)
+    }
   }
 
   function patchProps(el, oldProps, newProps) {
@@ -118,8 +184,8 @@ export function createRenderer (options) {
   }
 
   // 递归处理子集
-  function mountChildren(vnode, container, parentComponent) {
-    vnode.children.forEach((v) => {
+  function mountChildren(children, container, parentComponent) {
+    children.forEach((v) => {
       patch(null, v, container, parentComponent)
     })
   }

@@ -46,7 +46,7 @@ function setupStateFulComponent(instance) {
     const setupResult = proxyRefs(
       setup(shallowReadonly(instance.props), {
         emit: instance.emit
-      })
+      }) || {}
     )
     // setup执行结束后将当前实例置空
     setCurrentInstance(null)
