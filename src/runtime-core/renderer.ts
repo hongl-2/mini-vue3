@@ -3,13 +3,14 @@ import { ShapeFlags } from '../shared/ShapeFlags'
 import { Text, Fragment } from './vnode'
 import { createAppAPI } from './createApp'
 import { effect } from '../reactivity'
+import { EMPTY_OBJ } from '../shared'
 
 export function createRenderer (options) {
 
   const {
-    createElement,
-    patchProp,
-    insert
+    createElement: hostCreateElement,
+    patchProp: hostPatchProp,
+    insert: hostInsert
   } = options
 
   function render(vnode, container) {
@@ -65,7 +66,7 @@ export function createRenderer (options) {
   function mountElement(vnode, container, parentComponent) {
     // 创建当前分支节点
     // const el = vnode.el = document.createElement(vnode.type)
-    const el = vnode.el = createElement(vnode.type)
+    const el = vnode.el = hostCreateElement(vnode.type)
     const { children, shapeFlag, props } = vnode
 
     // 通过位运算的 & 查询children 是否是 TEXT_CHILDREN 类型
@@ -79,17 +80,41 @@ export function createRenderer (options) {
     // 设置元素的属性
     for(const key in props) {
       const value = props[key]
-      patchProp(el, key, value)
+      hostPatchProp(el, key, null, value)
     }
 
     // 将当前分支节点挂载在父级节点上
-    insert(el, container)
+    hostInsert(el, container)
   }
 
   function patchElement(n1, n2, container) {
     console.log('patchElement')
     console.log('n1', n1)
     console.log('n2', n2)
+    // 对比props
+    const oldProps = n1.props || EMPTY_OBJ
+    const newProps = n2.props || EMPTY_OBJ
+    const el = n2.el = n1.el
+    patchProps(el, oldProps, newProps)
+  }
+
+  function patchProps(el, oldProps, newProps) {
+    // 直接遍历新的props对象
+    for(const key in newProps) {
+      const prevProp = oldProps[key]
+      const nextProp = newProps[key]
+      // 前后不相等时 (修改)
+      if (prevProp !== nextProp) {
+        hostPatchProp(el, key, prevProp, nextProp)
+      }
+    }
+    if(oldProps !== EMPTY_OBJ) {
+      for(const key in oldProps) {
+        if(!(key in newProps)) {
+          hostPatchProp(el, key, null, null)
+        }
+      }
+    }
   }
 
   // 递归处理子集
@@ -129,8 +154,9 @@ export function createRenderer (options) {
         console.log('更新')
         const { proxy } = instance
         // 将subtree存储在实例上
-        const subTree = instance.subTree = instance.render.call(proxy)
+        const subTree = instance.render.call(proxy)
         const prevTree = instance.subTree
+        instance.subTree = subTree
         patch(prevTree, subTree, container, instance)
         // initialVnode.el = subTree.el
       }
