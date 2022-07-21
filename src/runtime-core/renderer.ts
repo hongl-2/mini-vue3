@@ -92,9 +92,6 @@ export function createRenderer (options) {
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {
-    console.log('patchElement')
-    console.log('n1', n1)
-    console.log('n2', n2)
     // 对比props
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
@@ -198,23 +195,42 @@ export function createRenderer (options) {
         }
       }
     } else {
+      // 对比中间的
       let s1 = i
       let s2 = i
-      // 对比中间的
+
+      const toBePatched = e2 - s2 + 1
+      let patched = 0
       const keyToNewIndexMap = new Map()
-      for (let k = s1; k <= e2; k++) {
+      let moved = false
+      // 在新老进行对比时记录最大无需移动的新索引  一旦后续对比时有一个小于这个数字则代表需要进行移动操作,并且将moved 设为true
+      let maxNewIndexSoFar = 0
+      // newIndex -> oldIndex 记录节点在新node中与在旧node中的索引映射表
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      // 这里默认赋值为0, 若为0则代表新node不存在旧node中(**即为新增的**) 所以后续记录索引时需要 + 1
+      for(let k = 0; k < toBePatched; k++)  newIndexToOldIndexMap[k] = 0
+
+      // 建立新node的 key-> index 的映射对象, 后续通过对比key获取到新的node的索引
+      for (let k = s2; k <= e2; k++) {
         const nextChild = c2[k]
         keyToNewIndexMap.set(nextChild.key, k)
       }
 
+      // 遍历旧node 去查询是否在新node中存在
       for (let k = s1; k <= e1; k++) {
         const prevChild = c1[k]
 
+        if(patched >= toBePatched) {
+          hostRemove(prevChild.el)
+          continue
+        }
+
         let newIndex
+        // 查询旧node是否存在新node中
         if(prevChild.key != null) {
           newIndex = keyToNewIndexMap.get(prevChild.key)
         } else {
-          for(let j = e2; j <= e2; j++) {
+          for(let j = s2; j <= e2; j++) {
             const nextChild = c2[j]
             if(isSameVNodeType(prevChild, nextChild)){
               newIndex = j
@@ -222,11 +238,41 @@ export function createRenderer (options) {
             }
           }
         }
-        // newIndex 等于 undefined 则表示在老的节点不存在新的里面
+          // newIndex 等于 undefined 则表示在老的节点不存在新的里面
         if(newIndex === undefined) {
           hostRemove(prevChild.el)
         } else {
-          // 老的在新的里面存在
+          if(newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+          } else {
+            moved = true
+          }
+          // 新的在老的里面
+          newIndexToOldIndexMap[newIndex - s2] = k + 1
+          patch(prevChild, c2[newIndex], container, parentComponent, null)
+          patched++
+        }
+      }
+      // 获取到的最长递增子序列
+      // 优化: 如果上述得到无需移动的话则不执行这一步
+      const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
+      let j = increasingNewIndexSequence.length - 1
+      for (let k = toBePatched - 1; k >= 0; k--) {
+        const nextIndex = k + s2 // 下一个要处理的新node的索引
+        const nextChild = c2[nextIndex]
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
+        if(newIndexToOldIndexMap[k] === 0) {
+          // 为0时是新增的节点, 执行新增逻辑
+          patch(null, nextChild, container, parentComponent, anchor)
+          // 如果上述得到是moved为true 则将相对应的节点进行移动操作(没错 insertBefore也可以执行移动的操作, 如果操作的节点已经在当前元素的子集里面)
+        } else if(moved) {
+          // 在最长递增子序列里面的对应缩索引的节点是无需移动的
+          if (j < 0 || k !== increasingNewIndexSequence[j]) {
+            // 移动下一个要处理的节点到锚点之前
+            hostInsert(nextChild.el, container, anchor)
+          } else {
+            j--
+          }
         }
       }
     }
@@ -286,7 +332,6 @@ export function createRenderer (options) {
     // 次数需要分清楚是初始化还是更新流程
     effect(() => {
       if (!instance.isMounted) {
-        console.log('初始化')
         const { proxy } = instance
         // 将subtree存储在实例上
         const subTree = instance.subTree = instance.render.call(proxy)
@@ -294,7 +339,6 @@ export function createRenderer (options) {
         initialVnode.el = subTree.el
         instance.isMounted = true
       } else {
-        console.log('更新')
         const { proxy } = instance
         // 将subtree存储在实例上
         const subTree = instance.render.call(proxy)
@@ -311,3 +355,45 @@ export function createRenderer (options) {
   }
 }
 
+
+// 获取最长递增子序列
+function getSequence(arr) {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
+}

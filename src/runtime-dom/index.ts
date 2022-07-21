@@ -22,6 +22,8 @@ function patchProp(el, key, prevVal, nextVal) {
 }
 
 function insert(child, parent, anchor) {
+  // 插入到anchor之前, 如果anchor为null 则将在最后
+  // tip: 如果child是已经存在的子节点, 会将child移动在anchor之前
   parent.insertBefore(child, anchor || null)
 }
 
