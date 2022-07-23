@@ -44,7 +44,7 @@
 
 ### runtime-dom
 
-- [X] 支持 custom renderer
+- [x] 支持 custom renderer
 
 ### compiler-core
 
