@@ -13,7 +13,9 @@ export function createComponentInstance(vnode, parent) {
     provides: parent ? parent.provides : {},
     parent,
     slots: {},
-    subTree: {}
+    subTree: {},
+    next: null,
+    update: () => {} // 组件更新是获取到的更新的方法
   }
 
   component.emit = emit.bind(null, component) as any

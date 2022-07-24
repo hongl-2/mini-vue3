@@ -4,6 +4,7 @@ import { Text, Fragment } from './vnode'
 import { createAppAPI } from './createApp'
 import { effect } from '../reactivity'
 import { EMPTY_OBJ } from '../shared'
+import { shouldUpdateComponent } from './componentUpdateUtils'
 
 export function createRenderer (options) {
 
@@ -314,23 +315,42 @@ export function createRenderer (options) {
   }
 
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor)
+    // 如果没有老的vnode 可以直接进行组件挂载
+    if(!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    } else {
+      updateComponent(n1, n2)
+    }
+
   }
 
   // 挂载组件流程
   function mountComponent(initialVnode, container, parentComponent, anchor) {
     // 返回一个组件实例
-    const instance = createComponentInstance(initialVnode, parentComponent)
+    const instance = initialVnode.component = createComponentInstance(initialVnode, parentComponent)
     // 处理组件的setup逻辑
     setupComponent(instance) // 执行完以后会初始化instance setup 并且再instance上添加render方法
     // 将组件的render和组件的setup进行关联
     setupRenderEffect(instance, initialVnode, container, anchor)
   }
 
+  function updateComponent(n1, n2) {
+    // 获取vnode上的组件实例信息, 并将老的vnode的组件实例赋值给新的vnode的组件实例上
+    const instance = n2.component = n1.component
+
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2
+      instance.update()
+    } else {
+      n2.el = n1.el;
+      instance.vnode = n2;
+    }
+  }
+
   // 将setup的值和render函数关联起来
   function setupRenderEffect(instance, initialVnode, container, anchor) {
     // 次数需要分清楚是初始化还是更新流程
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance
         // 将subtree存储在实例上
@@ -339,7 +359,13 @@ export function createRenderer (options) {
         initialVnode.el = subTree.el
         instance.isMounted = true
       } else {
-        const { proxy } = instance
+        console.log('进入到更新逻辑')
+        console.log('更新逻辑的实例对象instance: ', instance)
+        const { proxy, next, vnode } = instance
+        if(next) {
+          next.el = vnode.el
+          updateComponentPerRender(instance, next)
+        }
         // 将subtree存储在实例上
         const subTree = instance.render.call(proxy)
         const prevTree = instance.subTree
@@ -353,6 +379,13 @@ export function createRenderer (options) {
   return {
     createApp: createAppAPI(render)
   }
+}
+
+function updateComponentPerRender (instance, nextVNode) {
+  // 在更新前先改变实例中的虚拟node以及props信息
+  instance.vnode = nextVNode
+  instance.next = null
+  instance.props = nextVNode.props
 }
 
 
