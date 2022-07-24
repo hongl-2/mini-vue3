@@ -5,6 +5,7 @@ import { createAppAPI } from './createApp'
 import { effect } from '../reactivity'
 import { EMPTY_OBJ } from '../shared'
 import { shouldUpdateComponent } from './componentUpdateUtils'
+import { queueJobs } from './scheduler'
 
 export function createRenderer (options) {
 
@@ -372,6 +373,11 @@ export function createRenderer (options) {
         instance.subTree = subTree
         patch(prevTree, subTree, container, instance, anchor)
         // initialVnode.el = subTree.el
+      }
+    }, {
+      scheduler: () => {
+        // 对依赖数据统一处理 然后再一次性更新视图
+        queueJobs(instance.update)
       }
     })
   }
