@@ -16,7 +16,6 @@ export default {
         console.log("update");
         count.value = i;
       }
-debugger
       console.log(instance);
       nextTick(() => {
         console.log(instance);

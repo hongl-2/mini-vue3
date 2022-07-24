@@ -20,7 +20,6 @@ function queueFlush() {
 }
 
 function flushJobs() {
-  debugger
   isFlushPending = false
   let job
   while(job = queue.shift()) {
