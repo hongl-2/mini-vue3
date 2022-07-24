@@ -10,16 +10,31 @@ export function baseParse (content: string) {
   return createRoot(parseChildren(context))
 }
 
+
 function parseChildren(context) {
   const nodes: any = []
+  const s = context.source
   let node
-  if (context.source.startsWith('{{')) {
+  if (s.startsWith('{{')) {
      node = parseInterpolation(context)
-  } else if(context.source[0] === '<') {
+  } else if(s[0] === '<') {
     node = parseElement(context)
   }
+
+  if(!node) {
+    node = parseText(context)
+  }
+
   nodes.push(node)
   return nodes
+}
+
+function parseText(context) {
+  const content = parseTextData(context, context.source.length)
+  return {
+    type: NodeTypes.TEXT,
+    content
+  }
 }
 
 function parseElement(context) {
@@ -50,8 +65,8 @@ function parseInterpolation(context) {
   const closeIndex = context.source.indexOf(closeDelimiter, openDelimiter.length)
   advanceBy(context, openDelimiter.length)
   const rawContentLength = closeIndex - openDelimiter.length
-  const rawContent = context.source.slice(0, rawContentLength)
-  advanceBy(context, rawContentLength + closeDelimiter.length)
+  const rawContent = parseTextData(context, rawContentLength)
+  advanceBy(context, closeDelimiter.length)
   const content = rawContent.trim()
 
   return {
@@ -61,6 +76,13 @@ function parseInterpolation(context) {
       content: content,
     },
   }
+}
+// 获取指定的字符串并且推进
+function parseTextData(context: any, length) {
+  const content = context.source.slice(0, length)
+
+  advanceBy(context, length)
+  return content;
 }
 
 // 推进 删除content.source已经处理过的字符创

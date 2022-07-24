@@ -27,7 +27,7 @@ describe('Parse', () => {
     })
   })
 
-  describe.skip('text', () => {
+  describe('text', () => {
     it('simple text', () => {
       const ast = baseParse('some text')
 
