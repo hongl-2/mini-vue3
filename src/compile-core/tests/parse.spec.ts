@@ -10,7 +10,7 @@ describe('Parse', () => {
         content: {
           type: NodeTypes.SIMPLE_EXPRESSION,
           content: 'message'
-        },
+        }
       })
     })
   })
@@ -22,7 +22,7 @@ describe('Parse', () => {
       expect(ast.children[0]).toStrictEqual({
         type: NodeTypes.ELEMENT,
         tag: 'div',
-        // children: [],
+        children: []
       })
     })
   })
@@ -33,12 +33,12 @@ describe('Parse', () => {
 
       expect(ast.children[0]).toStrictEqual({
         type: NodeTypes.TEXT,
-        content: 'some text',
+        content: 'some text'
       })
     })
   })
 
-  test.skip('hello world', () => {
+  test('hello world', () => {
     const ast = baseParse('<div>hi,{{message}}</div>')
 
     expect(ast.children[0]).toStrictEqual({
@@ -60,7 +60,7 @@ describe('Parse', () => {
     })
   })
 
-  test.skip('Nested element ', () => {
+  test('Nested element ', () => {
     const ast = baseParse('<div><p>hi</p>{{message}}</div>')
 
     expect(ast.children[0]).toStrictEqual({
@@ -88,7 +88,7 @@ describe('Parse', () => {
     })
   })
 
-  test.skip('should throw error when lack end tag', () => {
+  test('should throw error when lack end tag', () => {
     expect(() => {
       baseParse('<div><span></div>')
     }).toThrow(`缺少结束标签:span`)
