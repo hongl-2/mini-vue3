@@ -114,7 +114,7 @@ function parseInterpolation(context) {
     type: NodeTypes.INTERPOLATION,
     content: {
       type: NodeTypes.SIMPLE_EXPRESSION,
-      content: content,
+      content
     },
   }
 }
