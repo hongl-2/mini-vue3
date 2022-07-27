@@ -10,6 +10,10 @@ export function isObject(object) {
   return object !== null && typeof object === 'object'
 }
 
+export function isString(value): value is string {
+  return typeof value === 'string'
+}
+
 export function hasChanged(val, newValue) {
   return !Object.is(val, newValue)
 }

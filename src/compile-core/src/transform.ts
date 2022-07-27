@@ -1,6 +1,13 @@
 import { NodeTypes } from './ast'
 import { TO_DISPLAY_STRING } from './runtimeHelper'
 
+export type TransformCtx = {
+  root: any,
+  nodeTransforms: any,
+  helpers: any,
+  helper: any
+}
+
 export function transform(root, options = {}) {
   const context = createTransformContext(root, options)
   // 1. 遍历 深度优先搜索
@@ -12,14 +19,24 @@ export function transform(root, options = {}) {
 }
 
 function createRootCodegen(root) {
-  root.codegenNode = root.children[0]
+  const child = root.children[0]
+  if(child.type === NodeTypes.ELEMENT) {
+    root.codegenNode = child.codegenNode
+  } else {
+    root.codegenNode = child
+  }
 }
 
-function traverseNodes(node, context) {
+function traverseNodes(node, context: TransformCtx) {
   // 2. 修改 text content
   const { nodeTransforms } = context
+  const exitFns: any = []
   for(let i = 0; i < nodeTransforms.length; i++) {
-    nodeTransforms[i](node)
+    const transformFn = nodeTransforms[i]
+    const onExit = transformFn(node, context)
+    if(onExit) {
+      exitFns.push(onExit)
+    }
   }
 
   switch (node.type) {
@@ -33,6 +50,10 @@ function traverseNodes(node, context) {
     default:
       break
   }
+  let i = exitFns.length
+  while(i--) {
+    exitFns[i]()
+  }
 }
 
 function traverseChildrenNodes(node, context) {
@@ -43,9 +64,9 @@ function traverseChildrenNodes(node, context) {
   }
 }
 
-function createTransformContext(root, options) {
+function createTransformContext(root, options): TransformCtx {
   // 返回一个执行上下文
-  const context =  {
+  const context: TransformCtx =  {
     root,
     nodeTransforms: options.nodeTransforms || [],
     helpers: new Map(),
