@@ -355,7 +355,7 @@ export function createRenderer (options) {
       if (!instance.isMounted) {
         const { proxy } = instance
         // 将subtree存储在实例上
-        const subTree = instance.subTree = instance.render.call(proxy)
+        const subTree = instance.subTree = instance.render.call(proxy, proxy)
         patch(null, subTree, container, instance, anchor)
         initialVnode.el = subTree.el
         instance.isMounted = true
@@ -368,7 +368,7 @@ export function createRenderer (options) {
           updateComponentPerRender(instance, next)
         }
         // 将subtree存储在实例上
-        const subTree = instance.render.call(proxy)
+        const subTree = instance.render.call(proxy, proxy)
         const prevTree = instance.subTree
         instance.subTree = subTree
         patch(prevTree, subTree, container, instance, anchor)
